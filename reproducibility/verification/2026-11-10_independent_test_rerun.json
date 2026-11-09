@@ -1,0 +1,47 @@
+{
+  "date": "2026-11-10",
+  "purpose": "Public, independently rerunnable ScavenPred/ACE-iPred manuscript reproduction",
+  "models": [
+    {
+      "name": "ScavenPred",
+      "train_n": 1648,
+      "test_n": 256,
+      "accuracy": 0.765625,
+      "mcc": 0.3770060545132683,
+      "roc_auc": 0.8236092265943011,
+      "confusion_matrix_rows_actual_0_1_cols_pred_0_1": [
+        [
+          33,
+          22
+        ],
+        [
+          38,
+          163
+        ]
+      ],
+      "validation": "Frozen RF trained only from provided training feature matrix; independent test never fitted"
+    },
+    {
+      "name": "ACE-iPred",
+      "train_n": 1933,
+      "test_n": 253,
+      "accuracy": 0.7272727272727273,
+      "mcc": 0.41619404992253084,
+      "roc_auc": 0.7852181790729277,
+      "confusion_matrix_rows_actual_0_1_cols_pred_0_1": [
+        [
+          53,
+          21
+        ],
+        [
+          48,
+          131
+        ]
+      ],
+      "validation": "Frozen RF trained only from provided training feature matrix; ACE labels aligned by sequence; independent test never fitted"
+    }
+  ],
+  "train_test_sequence_overlap": 0,
+  "dataset_bundle_sha256": "5361826554c55de3f0f05b725f6c86eaa0d1c701a985728b28366fc12d6fb6bc",
+  "scope_note": "Metrics reproduced from curated matrices. Independent proof of raw database curation and every benchmark figure is outside the scope of this verification."
+}

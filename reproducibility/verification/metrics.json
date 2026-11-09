@@ -1,0 +1,61 @@
+[
+  {
+    "model": "scavenpred",
+    "n_train": 1648,
+    "n_test": 256,
+    "features": [
+      "E5",
+      "ProtFP3",
+      "BLOSUM6",
+      "BLOSUM3",
+      "Z3"
+    ],
+    "accuracy": 0.765625,
+    "mcc": 0.3770060545132683,
+    "roc_auc": 0.8236092265943011,
+    "confusion_matrix": [
+      [
+        33,
+        22
+      ],
+      [
+        38,
+        163
+      ]
+    ],
+    "random_seed": 42,
+    "note": "Frozen preselected-feature reproduction; does not rerun historical feature selection."
+  },
+  {
+    "model": "ace-ipred",
+    "n_train": 1933,
+    "n_test": 253,
+    "features": [
+      "BLOSUM4",
+      "BLOSUM1",
+      "KF5",
+      "VHSE2",
+      "BLOSUM10",
+      "SVGER2",
+      "SVGER3",
+      "ProtFP7",
+      "SVGER4",
+      "MSWHIM3"
+    ],
+    "accuracy": 0.7272727272727273,
+    "mcc": 0.41619404992253084,
+    "roc_auc": 0.7852181790729277,
+    "confusion_matrix": [
+      [
+        53,
+        21
+      ],
+      [
+        48,
+        131
+      ]
+    ],
+    "random_seed": 42,
+    "note": "Frozen preselected-feature reproduction; does not rerun historical feature selection."
+  }
+]

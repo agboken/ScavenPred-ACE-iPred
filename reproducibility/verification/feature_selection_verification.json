@@ -1,0 +1,27 @@
+{
+  "pipeline": "training-only feature selection; independent-test set not accessed",
+  "training_peptides": 1648,
+  "starting_features": 88,
+  "welch_p_lt_0_05": 62,
+  "correlation_filter_abs_r_lt_0_70": 32,
+  "vif_lt_10": 14,
+  "forward_selected": [
+    "E5",
+    "ProtFP3",
+    "BLOSUM6",
+    "BLOSUM3",
+    "Z3"
+  ],
+  "wrapper_cv": "Stratified five-fold; shuffle=True; random_state=42",
+  "wrapper_model": "RandomForestClassifier(n_estimators=100,max_depth=7,random_state=42)",
+  "forward_mean_cv_mcc": [
+    0.2992052022774521,
+    0.359137,
+    0.408528,
+    0.4380680615062623,
+    0.45459146761593444
+  ],
+  "sixth_candidate": "KF10",
+  "sixth_mean_cv_mcc": 0.4532947760970848,
+  "verification_note": "Stage counts, five selected features and five/six candidate mean MCC scores independently recomputed on 2026-11-10. Training-only selection CV scores are not unbiased independent-test metrics."
+}
