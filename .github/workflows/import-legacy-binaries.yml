@@ -1,0 +1,55 @@
+name: Complete legacy binary dataset migration
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/import-legacy-binaries.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import-binaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Download three original binary spreadsheets and verify Git blob hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from urllib.request import urlopen
+          import hashlib
+          required = {
+              "AOP_test.xlsx": "663a1dd04972880e03c51b29905a9b8e5a19b4a9",
+              "AoP_TRAIN.xlsx": "69a5072c94c2e510dc663dea90458184690ee449",
+              "oat_ScavenPred.xlsx": "b8e5e13b4f5f4ed28a58b1019cbd8dfb107abd50",
+          }
+          for filename, expected_git_hash in required.items():
+              url = "https://raw.githubusercontent.com/agboken/ScavenPred/main/" + filename
+              data = urlopen(url, timeout=120).read()
+              git_hash = hashlib.sha1(
+                  f"blob {len(data)}\0".encode() + data
+              ).hexdigest()
+              if git_hash != expected_git_hash:
+                  raise RuntimeError(f"{filename}: expected {expected_git_hash}, got {git_hash}")
+              Path(filename).write_bytes(data)
+              print(f"Verified {filename}: {len(data)} bytes; Git SHA-1 {git_hash}")
+          PY
+      - name: Commit verified original Excel files to the new repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- AOP_test.xlsx AoP_TRAIN.xlsx oat_ScavenPred.xlsx
+          if git diff --cached --quiet; then
+            echo "All binary datasets already present."
+            exit 0
+          fi
+          git commit -m "Preserve three exact original Excel datasets from legacy repository"
+          git push
