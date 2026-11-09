@@ -8,7 +8,7 @@
 ## 1. Reproduce from a fresh clone
 
 ```bash
-git clone https://github.com/agboken/ScavenPred.git
+git clone https://github.com/agboken/ScavenPred-ACE-iPred.git
 cd ScavenPred
 python -m pip install -r reproducibility/requirements.txt
 python reproducibility/scripts/restore_data.py
@@ -63,7 +63,7 @@ Saved predictions and full-precision metrics are in `verification/`, including [
 
 ## 5. Notebooks
 
-- `../Scavenpred.ipynb` — original, historical development notebook. It is **not** the corrected feature-selection implementation.
+- `notebooks/Scavenpred_original_archived.ipynb` — original, archived historical development notebook. It is **not** the corrected feature-selection implementation.
 - `notebooks/ScavenPred_complete_training_and_analysis.ipynb` and `notebooks/ACE_iPred_complete_training_and_analysis.ipynb` — archived analysis and research-result notebooks, with outputs removed.
 - `notebooks/ScavenPred_frozen_reproduction.ipynb` and `notebooks/ACE_iPred_frozen_reproduction.ipynb` — concise frozen model-fitting notebooks.
 
