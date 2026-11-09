@@ -1,0 +1,51 @@
+name: Public ScavenPred and ACE-iPred reproducibility
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: reproducibility/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r reproducibility/requirements.txt
+      - name: Verify and restore public datasets
+        run: python reproducibility/scripts/restore_data.py
+      - name: Reproduce frozen model metrics and independent predictions
+        run: python reproducibility/scripts/reproduce_models.py --output reproduced_results
+      - name: Verify reported metrics and confusion matrices
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          metrics=json.loads(pathlib.Path('reproduced_results/metrics.json').read_text())
+          by={m['model']:m for m in metrics}
+          assert abs(by['scavenpred']['accuracy']-0.765625)<1e-10
+          assert by['scavenpred']['confusion_matrix']==[[33,22],[38,163]]
+          assert by['ace-ipred']['confusion_matrix']==[[53,21],[48,131]]
+          assert abs(by['ace-ipred']['accuracy']-184/253)<1e-10
+          print('Reproduced published independent-test confusion matrices.')
+          PY
+      - name: Verify training-only feature selection smoke test
+        env:
+          OPENBLAS_NUM_THREADS: '1'
+          OMP_NUM_THREADS: '1'
+          MKL_NUM_THREADS: '1'
+        run: |
+          python reproducibility/scripts/reproduce_selection.py --max-features 1 --trees 10 --folds 2 --out selection_smoke.json
+          python - <<'PY'
+          import json
+          r=json.load(open('selection_smoke.json'))
+          assert r['independent_test_used'] is False
+          assert [r[k] for k in ['initial_descriptors','significant_descriptors','correlation_filtered','vif_filtered']]==[88,62,32,14]
+          print('Training-only data selection stages confirmed.')
+          PY
