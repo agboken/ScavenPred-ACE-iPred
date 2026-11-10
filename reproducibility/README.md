@@ -2,6 +2,8 @@
 
 **Primary corrected method (10 November 2026): grouped nested five-fold CV retaining the original Welch / Pearson / VIF / forward-wrapper selection.** The corresponding external evaluation uses the same selection method, fitted exclusively on training data, with close training relatives excluded from the external test by sequence criteria.
 
+**Automated verification passed:** [GitHub Actions run 42731088361](https://github.com/agboken/ScavenPred-ACE-iPred/actions/runs/42731088361) independently regenerated all five grouped outer folds for both models, both similarity-screened external predictions, the four reported MCC values, and the saved confusion matrices. The run also provides a downloadable prediction-level artifact.
+
 ## Primary corrected results
 
 | Evaluation | ScavenPred | ACE-iPred |
