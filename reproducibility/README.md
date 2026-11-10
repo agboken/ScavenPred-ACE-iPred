@@ -102,3 +102,13 @@ The negative cohorts include *putative* negatives; absence of a motif does not e
 ## Paired statistical benchmarking notebook
 
 The [ScavenPred and ACE-iPred paired statistical benchmarking Jupyter notebook](notebooks/statistical_benchmarking/ScavenPred_ACEiPred_Statistical_Benchmarking.ipynb) reproduces matched external-cohort metrics, exact McNemar tests, stratified paired bootstrap confidence intervals, MCC and AUC comparisons, visualisations, and per-peptide discordance for ScavenPred versus AOPxSVM (250 peptides) and ACE-iPred versus UniDL4BioPep (248 peptides). Its two required matched-prediction CSV files and archived comparison statistics are stored [alongside the notebook](notebooks/statistical_benchmarking/), so it can be run without downloading extra files from this chat. It does not claim a new paired statistical comparison against AnOxPePred, whose complete per-peptide predictions were not recovered.
+
+## Final full-notebook execution check (10 November 2026)
+
+**All three public Jupyter notebooks passed full, fresh-environment execution** with the pinned dependency set, including both model-development notebooks and the paired statistical benchmarking notebook. This was a real execution of all code cells—not only a syntax or preliminary-screening test.
+
+- [Successful three-job GitHub Actions run 42816077067](https://github.com/agboken/ScavenPred-ACE-iPred/actions/runs/42816077067)
+- [Reusable full-execution verification workflow](../../.github/workflows/full-notebooks-execution-check.yml)
+- Job artifacts: `full-execution-scavenpred`, `full-execution-ace-ipred`, `full-execution-statistical-benchmark`, containing executed notebook copies and/or generated numerical reports. GitHub Actions retains artifacts for 30 days.
+
+The modelling notebook jobs verified the training-set sizes (1,648 and 1,933), screened independent evaluation sizes (250 and 248), and the exact reported grouped-CV and independent-test MCC values. The statistical notebook executed its full 4,000-bootstrap-resample analysis. The notebooks reproduce the modelling workflow **from the provided curated 88-descriptor matrices**, not the upstream collection of all original literature/UniProt records.
