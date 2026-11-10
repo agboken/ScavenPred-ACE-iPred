@@ -1,0 +1,61 @@
+name: Current notebook integrity and lightweight preflight
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'reproducibility/notebooks/*complete_training_and_analysis.ipynb'
+      - '.github/workflows/current-notebooks-preflight.yml'
+      - 'reproducibility/scripts/unpack_data.py'
+      - 'reproducibility/requirements.txt'
+  workflow_dispatch:
+
+jobs:
+  check-notebooks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      MPLBACKEND: Agg
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: reproducibility/requirements.txt
+      - name: Install locked reproducibility environment
+        run: python -m pip install -r reproducibility/requirements.txt
+      - name: Verify notebooks and execute dataset/grouping/screening preflight
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import nbformat
+          for name in ('ScavenPred','ACE_iPred'):
+              path = Path('reproducibility/notebooks') / (name+'_complete_training_and_analysis.ipynb')
+              notebook = nbformat.read(path, as_version=4)
+              nbformat.validate(notebook)
+              assert len(notebook.cells) >= 30
+              namespace = {'__name__':'notebook_preflight'}
+              code = [cell.source for cell in notebook.cells if cell.cell_type=='code']
+              for i, source in enumerate(code):
+                  compile(source, f'{path} cell {i}', 'exec')
+              assert 'def evaluate(' in '\n'.join(code)
+              assert 'def run(' in '\n'.join(code)
+              assert 'def make_groups(' in '\n'.join(code)
+              assert 'def screen(' in '\n'.join(code)
+              assert 'FEATURES = [' not in '\n'.join(code)
+              # Execute all code cells up to the expensive five-fold model
+              # evaluation (after grouping and first-fold feature screening).
+              for i, source in enumerate(code):
+                  if source.lstrip().startswith('evaluate(DATA,'):
+                      break
+                  exec(compile(source, f'{path} cell {i}', 'exec'), namespace)
+              assert len(namespace['first_candidates']) <= 12
+              assert len(namespace['groups'])==len(namespace['sequence'])
+              print(f'{name}: notebook syntax and preparatory analysis OK')
+          PY
