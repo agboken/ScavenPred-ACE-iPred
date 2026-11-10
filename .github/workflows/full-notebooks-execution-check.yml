@@ -1,0 +1,87 @@
+name: Full Jupyter notebooks execution verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/full-notebooks-execution-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - task: scavenpred
+            notebook: reproducibility/notebooks/ScavenPred_complete_training_and_analysis.ipynb
+            workdir: .
+          - task: ace-ipred
+            notebook: reproducibility/notebooks/ACE_iPred_complete_training_and_analysis.ipynb
+            workdir: .
+          - task: statistical-benchmark
+            notebook: reproducibility/notebooks/statistical_benchmarking/ScavenPred_ACEiPred_Statistical_Benchmarking.ipynb
+            workdir: reproducibility/notebooks/statistical_benchmarking
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      MPLBACKEND: Agg
+      MPLCONFIGDIR: /tmp/matplotlib-cache
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: reproducibility/requirements.txt
+      - name: Install pinned reproducibility environment
+        run: python -m pip install -r reproducibility/requirements.txt nbclient nbformat ipykernel
+      - name: Execute every code cell (not merely notebook syntax)
+        env:
+          TEST_NOTEBOOK: ${{ matrix.notebook }}
+          TEST_WORKDIR: ${{ matrix.workdir }}
+        run: |
+          python - <<'PY'
+          import os, json
+          from pathlib import Path
+          import nbformat
+          from nbclient import NotebookClient
+          notebook_path=Path(os.environ['TEST_NOTEBOOK']).resolve()
+          wd=Path(os.environ['TEST_WORKDIR']).resolve()
+          nb=nbformat.read(notebook_path,as_version=4)
+          nbformat.validate(nb)
+          print("Executing",notebook_path,"cells",len(nb.cells),"working directory",wd,flush=True)
+          client=NotebookClient(nb,timeout=2700,kernel_name='python3',resources={'metadata':{'path':str(wd)}},allow_errors=False)
+          result=client.execute()
+          out=Path('notebook_execution_')/os.environ['TEST_NOTEBOOK'].split('/')[-1]
+          out.parent.mkdir(parents=True,exist_ok=True)
+          nbformat.write(result,out)
+          print("EXECUTION PASSED",notebook_path,flush=True)
+          if "complete_training_and_analysis" in str(notebook_path):
+              task='scavenpred' if 'ScavenPred_' in notebook_path.name else 'ace-ipred'
+              p=Path('notebook_results')/task/'notebook_audit_summary.json'
+              summary=json.loads(p.read_text())
+              expected={'scavenpred':(1648,250,0.39979072085868017,0.4389243555851714),
+                        'ace-ipred':(1933,248,0.477641534350593,0.49139868535772263)}[task]
+              assert summary['train_n']==expected[0]
+              assert summary['external']['external_evaluated']==expected[1]
+              assert abs(summary['cv']['oof_mcc']-expected[2])<1e-9
+              assert abs(summary['external']['mcc']-expected[3])<1e-9
+              print('REPORT VERIFIED:',json.dumps(summary,indent=2))
+          else:
+              folder=Path('reproducibility/notebooks/statistical_benchmarking/results')
+              print('STATISTICAL OUTPUT FILES:',[str(p) for p in folder.glob('*')])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: full-execution-${{ matrix.task }}
+          path: |
+            notebook_execution_/
+            notebook_results/
+            reproducibility/notebooks/statistical_benchmarking/results/
+          if-no-files-found: ignore
+          retention-days: 30
