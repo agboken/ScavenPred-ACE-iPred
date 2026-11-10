@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/grouped-forward-wrapper.yml'
       - 'reproducibility/scripts/grouped_nested_forward_wrapper_cv.py'
+      - 'reproducibility/scripts/forward_wrapper_screened_external.py'
       - 'reproducibility/scripts/strict_group_nested_validation.py'
       - 'reproducibility/scripts/unpack_data.py'
       - 'reproducibility/requirements.txt'
@@ -61,6 +62,38 @@ jobs:
                           ('oof_pr_auc',average_precision_score(d.actual,d.positive_probability))]:
                   assert abs(r[k]-v)<1e-12,(name,k,r[k],v)
               print(name,'PASS n',n,'MCC',r['oof_mcc'],'accuracy',r['oof_accuracy'])
+          PY
+      - name: Evaluate wrapper-selected models on similarity-screened external cohorts
+        env:
+          OPENBLAS_NUM_THREADS: '1'
+          OMP_NUM_THREADS: '1'
+          MKL_NUM_THREADS: '1'
+        run: >
+          python reproducibility/scripts/forward_wrapper_screened_external.py
+          --data reproducibility/data/csv
+          --out grouped_wrapper_results
+          --model both --inner-trees 40 --candidate-limit 12
+      - name: Verify external MCC and confusion matrices
+        run: |
+          python - <<'PY'
+          import json,pandas as pd
+          from sklearn.metrics import accuracy_score,matthews_corrcoef,roc_auc_score,average_precision_score,confusion_matrix
+          expected={
+             'scavenpred':(250,[[36,18],[36,160]],0.4389243555851714),
+             'ace-ipred':(248,[[56,17],[42,133]],0.49139868535772263)}
+          for name,(n,cm,expected_mcc) in expected.items():
+              r=json.load(open('grouped_wrapper_results/'+name+'_wrapper_external_report.json'))
+              d=pd.read_csv('grouped_wrapper_results/'+name+'_wrapper_external_predictions.csv')
+              d=d[d.excluded_related_to_train==False]
+              assert len(d)==n and len(d.sequence.unique())==n
+              assert confusion_matrix(d.actual,d.prediction,labels=[0,1]).tolist()==cm
+              assert abs(matthews_corrcoef(d.actual,d.prediction)-expected_mcc)<1e-9
+              for k,v in [('accuracy',accuracy_score(d.actual,d.prediction)),
+                          ('mcc',matthews_corrcoef(d.actual,d.prediction)),
+                          ('roc_auc',roc_auc_score(d.actual,d.positive_probability)),
+                          ('pr_auc',average_precision_score(d.actual,d.positive_probability))]:
+                  assert abs(r[k]-v)<1e-12
+              print(name,'external evaluation PASS; n',n,'MCC',r['mcc'])
           PY
       - uses: actions/upload-artifact@v4
         with:
