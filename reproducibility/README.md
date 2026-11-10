@@ -98,3 +98,7 @@ Do **not** mix metrics, feature subsets or cohort sizes between evaluation proto
 ## Scientific scope
 
 The negative cohorts include *putative* negatives; absence of a motif does not establish experimental inactivity. The models predict free-radical-scavenging or ACE-inhibitory peptide activities, not experimentally observed values. Cite the associated manuscript when final publication information is available.
+
+## Paired statistical benchmarking notebook
+
+The [ScavenPred and ACE-iPred paired statistical benchmarking Jupyter notebook](notebooks/statistical_benchmarking/ScavenPred_ACEiPred_Statistical_Benchmarking.ipynb) reproduces matched external-cohort metrics, exact McNemar tests, stratified paired bootstrap confidence intervals, MCC and AUC comparisons, visualisations, and per-peptide discordance for ScavenPred versus AOPxSVM (250 peptides) and ACE-iPred versus UniDL4BioPep (248 peptides). Its two required matched-prediction CSV files and archived comparison statistics are stored [alongside the notebook](notebooks/statistical_benchmarking/), so it can be run without downloading extra files from this chat. It does not claim a new paired statistical comparison against AnOxPePred, whose complete per-peptide predictions were not recovered.
