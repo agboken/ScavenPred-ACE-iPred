@@ -23,7 +23,12 @@ def related(a,b):
 def run(data,out,name,inner_trees=40,candidate_limit=12):
     seq,X,y=dataset(data,name);groups=make_groups(seq);y=y.to_numpy()
     filename='scavenpred_test_88.csv' if name=='scavenpred' else 'ace_test_88.csv'
-    test=pd.read_csv(data/filename)
+    test_path=data/filename
+    if not test_path.exists() and name=='scavenpred':
+        test_path=data.parent/'scavenpred_test_88.csv'
+    if not test_path.exists():
+        raise FileNotFoundError(f"Missing external descriptor file: {test_path}")
+    test=pd.read_csv(test_path)
     test.seq=test.seq.astype(str).str.strip().str.upper()
     assert test.seq.is_unique and set(test.seq).isdisjoint(set(seq))
     candidates,counts=screen(X,y,candidate_limit)
