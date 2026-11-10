@@ -1,38 +1,46 @@
-# Reconciliation of ScavenPred and ACE-iPred evaluation results
+# Reconciliation of ScavenPred and ACE-iPred evaluations
 
-**Verified 10 November 2026.** Multiple correctly archived evaluations were previously displayed without enough distinction. The two **canonical corrected evaluation** protocols are the sequence-group-disjoint nested CV and similarity-screened external evaluation below.
+**Primary corrected experiments: grouped nested CV with the original Welch/Pearson/VIF/forward-wrapper feature-selection method and its matching similarity-screened external evaluation.** These results supersede the previous `SelectKBest` evaluation for the revised wrapper-based manuscript. Always pair metrics with the correct model and cohort.
 
-## Evaluation comparison
+| Evaluation protocol | ScavenPred n | Accuracy | MCC | ROC-AUC | PR-AUC | ACE-iPred n | Accuracy | MCC | ROC-AUC | PR-AUC |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| **Primary wrapper grouped nested CV** | **1,648** | **70.15%** | **0.399791** | **0.770657** | **0.763040** | **1,933** | **73.98%** | **0.477642** | **0.811789** | **0.818212** |
+| **Primary wrapper similarity-screened external** | **250** | **78.40%** | **0.438924** | **0.832389** | **0.940418** | **248** | **76.21%** | **0.491399** | **0.843366** | **0.921615** |
+| Previous grouped nested CV with `SelectKBest` | 1,648 | 70.33% | 0.403345 | 0.781950 | 0.774145 | 1,933 | 75.06% | 0.498451 | 0.819098 | 0.820272 |
+| Previous screened external with `SelectKBest` | 250 | 81.20% | 0.526038 | 0.860355 | 0.954734 | 248 | 75.00% | 0.461364 | 0.842505 | 0.929486 |
+| Historical frozen RF independent test | 256 | 76.56% | 0.377006 | 0.823609 | — | 253 | 72.73% | 0.416194 | 0.785218 | — |
+| Early non-grouped nested CV audit | 1,648 | 70.02% | 0.397091 | 0.765949 | — | 1,933 | 72.37% | 0.444549 | 0.795174 | — |
 
-| Protocol | ScavenPred n | ScavenPred accuracy | MCC | ROC-AUC | ACE-iPred n | ACE-iPred accuracy | MCC | ROC-AUC |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Legacy frozen-model independent test | 256 | 76.5625% | 0.377006 | 0.823609 | 253 | 72.7273% | 0.416194 | 0.785218 |
-| Earlier training-only nested CV (not group-disjoint) | 1,648 | 70.0243% | 0.397091 | 0.765949 | 1,933 | 72.3745% | 0.444549 | 0.795174 |
-| **Canonical corrected group-disjoint nested CV** | **1,648** | **70.3277%** | **0.403345** | **0.781950** | **1,933** | **75.0647%** | **0.498451** | **0.819098** |
-| **Canonical corrected similarity-screened external evaluation** | **250** | **81.20%** | **0.526038** | **0.860355** | **248** | **75.00%** | **0.461364** | **0.842505** |
+## MCC verification from primary confusion matrices
 
-The corresponding canonical PR-AUC values are:
-- Group-disjoint nested CV: ScavenPred **0.774145**, ACE-iPred **0.820272**
-- Similarity-screened external: ScavenPred **0.954734**, ACE-iPred **0.929486**
+| Evaluation | ScavenPred [TN,FP;FN,TP] | ACE-iPred [TN,FP;FN,TP] |
+|---|---|---|
+| Wrapper grouped CV | [675,196;296,481] | [655,244;259,775] |
+| Wrapper screened external | [36,18;36,160] | [56,17;42,133] |
 
-## Exactly which results to use
+- Grouped ScavenPred accuracy = (675+481)/1648 = 0.70145631
+- Grouped ACE-iPred accuracy = (655+775)/1933 = 0.73978272
+- External ScavenPred accuracy = (36+160)/250 = 0.784
+- External ACE-iPred accuracy = (56+133)/248 = 0.76209677
 
-1. **Cross-validation:** [Final grouped nested CV](2026-11-10_final_group_disjoint_nested_cv.md). This evaluates every training sample once as an outer-fold holdout and groups closely related peptide sequences. It uses inner grouped CV, `SelectKBest(f_classif)`, and RF grid tuning. It is **not** the historical Welch/VIF/forward-wrapper pipeline.
-2. **External:** [Final similarity-screened external](2026-11-10_final_external_similarity_screened.md). It excludes 6 ScavenPred and 5 ACE-iPred close relatives of training sequences before external scoring, trains on the original training cohort using grouped inner CV, and evaluates a *newly selected RF model* on 250 / 248 sequences.
+All primary MCCs, ROC-AUCs, and PR-AUCs were recomputed from the corresponding prediction-level outputs; the outer MCC is calculated from **aggregated outer-fold confusion counts**, not an arithmetic mean of fold MCCs.
 
-## Where older numbers came from
+## Authoritative reproducibility references
 
-- [Frozen-model rerun](2026-11-10_independent_test_rerun.json): preselected features of an earlier frozen RF evaluated on 256 / 253. Not the newly selected model and not similarity-screened.
-- [Earlier corrected nested-CV audit](2026-11-10_corrected_nested_cv.md): different feature-selection method/split protocol, no sequence-group isolation. Kept only for audit history.
-- The web-deployed ScavenPred and ACE-iPred predictors are not automatically updated by these experimental reruns. **Do not claim the externally validated revised model is the live web model** unless separately deployed and checked.
+- [Grouped nested forward-wrapper CV](2026-11-10_grouped_nested_forward_wrapper.md)
+- [Matching forward-wrapper external evaluation](2026-11-10_grouped_forward_wrapper_external.md)
+- [Nested wrapper source code](../scripts/grouped_nested_forward_wrapper_cv.py)
+- [External wrapper source code](../scripts/forward_wrapper_screened_external.py)
+- [Automated verification](../../.github/workflows/grouped-forward-wrapper.yml)
 
-## Arithmetic verification
+## Why historical numbers differ
 
-- Grouped ScavenPred: (672 + 487) / 1,648 = 0.703276699
-- Grouped ACE-iPred: (652 + 799) / 1,933 = 0.750646663
-- Screened ScavenPred: (41 + 162) / 250 = 0.812
-- Screened ACE-iPred: (54 + 132) / 248 = 0.75
+The old frozen RF models, the corrected `SelectKBest` models and the new forward-wrapper models have **different selected descriptors and/or model parameters and datasets**. The `SelectKBest` models are preserved as prior alternative research analyses, not as manuscript results for a claim about the forward wrapper.
 
-Each canonical result matches its recorded confusion matrix and saved local prediction-level evaluation. All canonical values are traceable to the corresponding published scripts and final GitHub reports.
+The new forward-wrapper selected final external descriptor sets are:
+- **ScavenPred:** ProtFP3, BLOSUM6, BLOSUM3, E5, ProtFP2
+- **ACE-iPred:** ProtFP3, BLOSUM1, BLOSUM6, BLOSUM4, BLOSUM5
 
-**Manuscript rule:** use a single consistent model/protocol per table and ensure its sample counts, methods, features, and reported metrics are paired. Do not mix the old frozen RF or earlier nested-CV numbers with the canonical corrected validation.
+The public PepSilico predictor interfaces were not automatically redeployed with these research models. No historical evaluation is evidence that the corrected wrapper-based protocol was used at an earlier date.
+
+**For revised manuscript tables, always use the first two rows and the documented wrapper pipeline, not the superseded model configurations.**
