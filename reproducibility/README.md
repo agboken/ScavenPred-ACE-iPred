@@ -5,17 +5,15 @@
 
 **Status (10 November 2026):** Research datasets, corrected training-only ScavenPred feature-selection code, frozen Random Forest reproduction code, model configurations, independent-test prediction outputs and verification records are publicly available here.
 
-## Verified automated reproduction and model-version distinction (10 November 2026)
+## Reproduction status
 
-The [GitHub Actions frozen-model reproduction](../../actions/workflows/reproducibility.yml) was independently rerun successfully after locking **scikit-learn==1.8.0**. Without this pin, the GitHub runner installed scikit-learn 1.9.1 and ACE-iPred produced 71.15% rather than the archived 72.73%. Version-locking restored exact ScavenPred and ACE-iPred confusion matrices. The archived **frozen** metrics are ScavenPred **76.56%** (256 external peptides) and ACE-iPred **72.73%** (253 external peptides).
-
-**These are not the canonical new model-selection results.** The corrected sequence-group-disjoint nested CV reports **70.33% / 75.06%** and the separately similarity-screened external evaluation reports **81.20% / 75.00%** for ScavenPred / ACE-iPred, respectively. They use distinct fitted models, descriptors, selection procedures, and in the external case fewer test peptides (250 / 248). Do not compare these as if they were the same trained predictor, and do not represent the frozen-model workflow's passing CI as an automated rerun of the corrected grouped/external protocols. See [Results reconciliation](verification/RESULTS_RECONCILIATION.md).
+The corrected evaluation reports and scripts are provided below. The separate historical frozen-model CI is passing under scikit-learn 1.8.0, but **does not validate the corrected grouped or similarity-screened models**; see [results reconciliation](verification/RESULTS_RECONCILIATION.md).
 
 ## 1. Reproduce from a fresh clone
 
 ```bash
 git clone https://github.com/agboken/ScavenPred-ACE-iPred.git
-cd ScavenPred
+cd ScavenPred-ACE-iPred
 python -m pip install -r reproducibility/requirements.txt
 python reproducibility/scripts/restore_data.py
 python reproducibility/scripts/reproduce_selection.py --out scavenpred_feature_selection.json
@@ -56,16 +54,20 @@ The six-step MCC trace matches the archived selection results, including the six
 
 For a strictly fold-contained *alternative* feature-selection assessment, `scripts/nested_feature_selection.py` fits its selector and tunes hyperparameters inside training partitions of outer CV folds, and does not access the independent-test data.
 
-## 4. Frozen-model reproduction and independent evaluation
+## 4. Corrected evaluation results — primary manuscript results
 
-`scripts/reproduce_models.py` reads only published training and independent-test CSVs, verifies no exact train/test sequence overlap and uses the fixed feature subsets.
+The corrected **group-disjoint nested cross-validation** uses supervised feature selection inside each inner training fold. The corrected **similarity-screened external evaluation** uses a separately selected final model and excludes close training relatives before external scoring.
 
-| Model | Training peptides | Independent test | Accuracy | MCC | ROC AUC | TN / FP / FN / TP |
-|---|---:|---:|---:|---:|---:|---|
-| ScavenPred (1,000 trees, depth 7) | 1,648 | 256 | 0.765625 | 0.377006 | 0.823609 | 33 / 22 / 38 / 163 |
-| ACE-iPred (200 trees, depth 10, leaf 4, balanced) | 1,933 | 253 | 0.727273 | 0.416194 | 0.785218 | 53 / 21 / 48 / 131 |
+| Model | Training peptides | Grouped nested CV accuracy | Screened external peptides | Screened external accuracy | External MCC | External ROC-AUC |
+|---|---:|---:|---:|---:|---:|---:|
+| **ScavenPred** | 1,648 | **70.33%** | 250 | **81.20%** | 0.526 | 0.860 |
+| **ACE-iPred** | 1,933 | **75.06%** | 248 | **75.00%** | 0.461 | 0.843 |
 
-Saved predictions and full-precision metrics are in `verification/`, including [`2026-11-10_independent_test_rerun.json`](verification/2026-11-10_independent_test_rerun.json). These evaluations were independently reproduced from the supplied matrices on 10 November 2026. They are not claims that every other analysis in the manuscript was rerun.
+See the [grouped nested CV validation report](verification/2026-11-10_final_group_disjoint_nested_cv.md), [screened external report](verification/2026-11-10_final_external_similarity_screened.md), and [results reconciliation](verification/RESULTS_RECONCILIATION.md) for the complete metrics, methods, descriptors, and executable commands.
+
+### Historical frozen-model results (not the corrected manuscript models)
+
+The archived frozen RF predictions are preserved separately in [the historical independent-test rerun](verification/2026-11-10_independent_test_rerun.json) and [its raw metrics file](verification/metrics.json). These use different feature subsets and the unscreened 256/253 test cohorts. They must **not** be substituted for the corrected numbers above. The passing [GitHub Actions frozen-model check](../../actions/workflows/reproducibility.yml) verifies those archived models only.
 
 ## 5. Notebooks
 
