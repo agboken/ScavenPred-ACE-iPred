@@ -5,6 +5,12 @@
 
 **Status (10 November 2026):** Research datasets, corrected training-only ScavenPred feature-selection code, frozen Random Forest reproduction code, model configurations, independent-test prediction outputs and verification records are publicly available here.
 
+## Verified automated reproduction and model-version distinction (10 November 2026)
+
+The [GitHub Actions frozen-model reproduction](../../actions/workflows/reproducibility.yml) was independently rerun successfully after locking **scikit-learn==1.8.0**. Without this pin, the GitHub runner installed scikit-learn 1.9.1 and ACE-iPred produced 71.15% rather than the archived 72.73%. Version-locking restored exact ScavenPred and ACE-iPred confusion matrices. The archived **frozen** metrics are ScavenPred **76.56%** (256 external peptides) and ACE-iPred **72.73%** (253 external peptides).
+
+**These are not the canonical new model-selection results.** The corrected sequence-group-disjoint nested CV reports **70.33% / 75.06%** and the separately similarity-screened external evaluation reports **81.20% / 75.00%** for ScavenPred / ACE-iPred, respectively. They use distinct fitted models, descriptors, selection procedures, and in the external case fewer test peptides (250 / 248). Do not compare these as if they were the same trained predictor, and do not represent the frozen-model workflow's passing CI as an automated rerun of the corrected grouped/external protocols. See [Results reconciliation](verification/RESULTS_RECONCILIATION.md).
+
 ## 1. Reproduce from a fresh clone
 
 ```bash
