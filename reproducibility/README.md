@@ -4,6 +4,17 @@
 
 **Automated verification passed:** [GitHub Actions run 42731088361](https://github.com/agboken/ScavenPred-ACE-iPred/actions/runs/42731088361) independently regenerated all five grouped outer folds for both models, both similarity-screened external predictions, the four reported MCC values, and the saved confusion matrices. The run also provides a downloadable prediction-level artifact.
 
+## Complete sequential research notebooks
+
+Both notebooks contain **inline executable Python code**, not merely calls to older notebooks: checksum-controlled dataset restoration; 88-descriptor loading and activity-label checks; class/length/distribution plots; sequence-relatedness grouping and disjoint-fold audits; train-only Welch, Pearson, VIF screening; 12-candidate, three-fold inner MCC forward-wrapper search; five-fold outer model evaluation; held-out confusion matrices, ROC/PR curves and descriptor-selection frequency; full-training wrapper selection; similarity-screened external evaluation; per-sequence MCC checks; Random Forest descriptor importance and optional SHAP interpretation.
+
+- [ScavenPred: full sequential computational notebook](notebooks/ScavenPred_complete_training_and_analysis.ipynb)
+- [ACE-iPred: full sequential computational notebook](notebooks/ACE_iPred_complete_training_and_analysis.ipynb)
+
+**Upstream provenance boundary:** The curated 88-descriptor matrices are provided, but the complete original UniProt protein collection, fragmentation procedure and experimentally sourced activity records are not reconstructed from these files. Thus the notebooks reproduce all available **current modelling, validation, visualisation and analysis** stages, not unprovided raw source collection.
+
+The verified scripts in `scripts/` remain the canonical reference implementation; the notebooks embed their functions to document and execute each stage in sequence. The [lightweight notebook preflight](../../.github/workflows/current-notebooks-preflight.yml) checks syntax, data restoration, grouping and preliminary feature screening; the full model runs remain covered by the [grouped-wrapper verification workflow](../../.github/workflows/grouped-forward-wrapper.yml).
+
 ## Primary corrected results
 
 | Evaluation | ScavenPred | ACE-iPred |
