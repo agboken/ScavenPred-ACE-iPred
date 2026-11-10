@@ -1,4 +1,4 @@
-name: Public ScavenPred and ACE-iPred reproducibility
+name: Frozen-model reproducibility (locked scikit-learn 1.8.0)
 on:
   push:
     branches: [main]
