@@ -1,142 +1,87 @@
-# ScavenPred / ACE-iPred — Public reproducibility release
+# ScavenPred and ACE-iPred — Reproducibility
 
-> **CURRENT RESULTS (10 November 2026):** Use the [reconciled results index](verification/RESULTS_RECONCILIATION.md) for the authoritative corrected evaluation. **Grouped nested CV**: ScavenPred 70.33% (n=1,648), ACE-iPred 75.06% (n=1,933). **Similarity-screened external evaluation**: ScavenPred 81.20% (n=250), ACE-iPred 75.00% (n=248). Older frozen-model and preliminary nested-CV values below are retained only for reproducibility history and must not be mixed with these final protocols.
+**Primary corrected method (10 November 2026): grouped nested five-fold CV retaining the original Welch / Pearson / VIF / forward-wrapper selection.** The corresponding external evaluation uses the same selection method, fitted exclusively on training data, with close training relatives excluded from the external test by sequence criteria.
 
+## Primary corrected results
 
-**Status (10 November 2026):** Research datasets, corrected training-only ScavenPred feature-selection code, frozen Random Forest reproduction code, model configurations, independent-test prediction outputs and verification records are publicly available here.
+| Evaluation | ScavenPred | ACE-iPred |
+|---|---:|---:|
+| Training peptides | 1,648 | 1,933 |
+| Grouped nested CV accuracy | **70.15%** | **73.98%** |
+| Grouped nested CV MCC | **0.399791** | **0.477642** |
+| Grouped nested CV ROC-AUC | **0.770657** | **0.811789** |
+| Grouped nested CV PR-AUC | **0.763040** | **0.818212** |
+| Screened external peptides | **250** | **248** |
+| Screened external accuracy | **78.40%** | **76.21%** |
+| Screened external MCC | **0.438924** | **0.491399** |
+| Screened external ROC-AUC | **0.832389** | **0.843366** |
+| Screened external PR-AUC | **0.940418** | **0.921615** |
 
-## Reproduction status
+**Confusion matrices**, in TN / FP / FN / TP order: nested CV ScavenPred **675 / 196 / 296 / 481**, ACE-iPred **655 / 244 / 259 / 775**; external ScavenPred **36 / 18 / 36 / 160**, ACE-iPred **56 / 17 / 42 / 133**.
 
-The corrected evaluation reports and scripts are provided below. The separate historical frozen-model CI is passing under scikit-learn 1.8.0, but **does not validate the corrected grouped or similarity-screened models**; see [results reconciliation](verification/RESULTS_RECONCILIATION.md).
+- [Grouped nested CV report and fold-selected features](verification/2026-11-10_grouped_nested_forward_wrapper.md)
+- [Matching forward-wrapper external test report](verification/2026-11-10_grouped_forward_wrapper_external.md)
+- [Group-disjoint wrapper verification workflow](../../actions/workflows/grouped-forward-wrapper.yml)
+- [Reproducible grouped nested forward-wrapper script](scripts/grouped_nested_forward_wrapper_cv.py)
+- [Reproducible forward-wrapper external script](scripts/forward_wrapper_screened_external.py)
 
-## 1. Reproduce from a fresh clone
+## Reproduce from a fresh clone
 
 ```bash
 git clone https://github.com/agboken/ScavenPred-ACE-iPred.git
 cd ScavenPred-ACE-iPred
 python -m pip install -r reproducibility/requirements.txt
-python reproducibility/scripts/restore_data.py
-python reproducibility/scripts/reproduce_selection.py --out scavenpred_feature_selection.json
-python reproducibility/scripts/reproduce_models.py --output reproduced_results
-```
-
-The complete training-only five-fold wrapper takes longer than the model prediction check. On resource-limited hardware, set `OPENBLAS_NUM_THREADS=1` before running the feature-selection script.
-
-The **optional** independent nested-CV audit (a different experimental method, not the original manuscript wrapper) is:
-
-```bash
-python reproducibility/scripts/nested_feature_selection.py --output nested_cv_results.json
-```
-
-## 2. Public datasets and provenance
-
-The public `data/` folder contains:
-
-- `ScavenPred_ACEiPred_dataset_bundle.tar.gz.b64` — compressed CSV archive (SHA-256: `5361826554c55de3f0f05b725f6c86eaa0d1c701a985728b28366fc12d6fb6bc`).
-- `scavenpred_test_256_features.csv.gz.b64` — full independent-test descriptor matrix, packaged separately.
-
-The restoration script verifies the archived checksum, decodes the compressed files and exports 16 normal CSV files to `reproducibility/data/restored/`.
-
-The dataset bundle is additionally mirrored as **23 independently accessible parts** under [`data/archive_parts/`](data/archive_parts/). To reconstruct these with the separate checksum-verifying alternative, run `python reproducibility/scripts/unpack_data.py` (outputs to `reproducibility/data/csv/`). The ScavenPred independent-test descriptor matrix is also a directly readable CSV at [`data/scavenpred_test_88.csv`](data/scavenpred_test_88.csv). The public archive includes finalized training matrices and labels, test labels, ScavenPred screening / correlation / VIF / wrapper / hyperparameter results, and saved independent-test predictions.
-
-No data are downloaded from the private PepSilico repository. The frozen evaluation scripts use the research datasets supplied here.
-
-## 3. Training-only feature-selection reproduction
-
-`scripts/reproduce_selection.py` operates **only on the 1,648-peptide ScavenPred training matrix** and does not read the independent-test set. It independently implements:
-
-1. Welch unpaired t-tests (`p < 0.05`), reducing 88 descriptors to 62.
-2. Greedy class-signal-ordered correlation filtering (`|r| < 0.70`), retaining 32 descriptors.
-3. Iterative VIF filtering (`VIF < 10`) with a weaker-class-correlation tie-break, retaining 14.
-4. Forward selection by mean MCC from stratified five-fold RF cross-validation (100 trees, max depth 7, shuffle=True, seed=42). Selected descriptors: **E5, ProtFP3, BLOSUM6, BLOSUM3 and Z3**.
-
-The six-step MCC trace matches the archived selection results, including the sixth candidate being rejected. See `verification/feature_selection_verification.json`. These *training CV selection scores* should not be represented as independent-test performance or as an unbiased nested-CV estimate.
-
-For a strictly fold-contained *alternative* feature-selection assessment, `scripts/nested_feature_selection.py` fits its selector and tunes hyperparameters inside training partitions of outer CV folds, and does not access the independent-test data.
-
-## 4. Corrected evaluation results — primary manuscript results
-
-The corrected **group-disjoint nested cross-validation** uses supervised feature selection inside each inner training fold. The corrected **similarity-screened external evaluation** uses a separately selected final model and excludes close training relatives before external scoring.
-
-| Model | Training peptides | Grouped nested CV accuracy | Screened external peptides | Screened external accuracy | External MCC | External ROC-AUC |
-|---|---:|---:|---:|---:|---:|---:|
-| **ScavenPred** | 1,648 | **70.33%** | 250 | **81.20%** | 0.526 | 0.860 |
-| **ACE-iPred** | 1,933 | **75.06%** | 248 | **75.00%** | 0.461 | 0.843 |
-
-See the [grouped nested CV validation report](verification/2026-11-10_final_group_disjoint_nested_cv.md), [screened external report](verification/2026-11-10_final_external_similarity_screened.md), and [results reconciliation](verification/RESULTS_RECONCILIATION.md) for the complete metrics, methods, descriptors, and executable commands.
-
-### Historical frozen-model results (not the corrected manuscript models)
-
-The archived frozen RF predictions are preserved separately in [the historical independent-test rerun](verification/2026-11-10_independent_test_rerun.json) and [its raw metrics file](verification/metrics.json). These use different feature subsets and the unscreened 256/253 test cohorts. They must **not** be substituted for the corrected numbers above. The passing [GitHub Actions frozen-model check](../../actions/workflows/reproducibility.yml) verifies those archived models only.
-
-## 5. Notebooks
-
-- `notebooks/Scavenpred_original_archived.ipynb` — original, archived historical development notebook. It is **not** the corrected feature-selection implementation.
-- `notebooks/ScavenPred_complete_training_and_analysis.ipynb` and `notebooks/ACE_iPred_complete_training_and_analysis.ipynb` — archived analysis and research-result notebooks, with outputs removed.
-- `notebooks/ScavenPred_frozen_reproduction.ipynb` and `notebooks/ACE_iPred_frozen_reproduction.ipynb` — concise frozen model-fitting notebooks.
-
-For code-level reproduction, prefer the scripts in `scripts/`.
-
-## 6. Public tools and protected research
-
-ScavenPred: https://pepsilico.com/tools/scavenpred/
-
-ACE-iPred: https://pepsilico.com/tools/ace-ipred/
-
-**SAPIEN-Pep / SIPPAD are distinct pre-publication research systems and no proprietary code or engine archives are included here.**
-
-## 7. Scope and limitations
-
-The archived data are curated research datasets and include putative negatives, not exclusively experimentally verified inactive peptides. There is no claim that independent predictions are experimental measurements. The reproducibility archive exposes features and labels; it does not provide independent evidence that every source descriptor value can be rederived from the original peptide databases. Please cite the associated manuscript when its final bibliographic details are available.
-
-
-## Corrected nested cross-validation audit (November 2026)
-
-The executable [nested_feature_selection_cv.py](scripts/nested_feature_selection_cv.py) reruns Welch univariate screening, class-guided Pearson redundancy removal, VIF filtering, inner three-fold forward-selection and RF fitting **from scratch within each outer training fold**. The outer five held-out partitions are not available to these steps. The script uses the published training feature matrices and does not load the independent-test set.
-
-To rerun after restoring datasets:
-
-```bash
-python reproducibility/scripts/nested_feature_selection_cv.py --data reproducibility/data/restored --out nested_results --model scavenpred --max-features 5 --candidate-limit 12 --trees 40
-python reproducibility/scripts/nested_feature_selection_cv.py --data reproducibility/data/restored --out nested_results --model ace-ipred --max-features 10 --candidate-limit 12 --trees 40
-```
-
-The previously published `reproduce_selection.py` screens the entire training dataset before scoring its five-fold wrapper. **Its wrapper scores must not be interpreted as leakage-free cross-validated generalization estimates.** It is retained for historical transparency. The newer nested evaluation addresses this within-training issue prospectively, but does not establish that the historical independent test was never consulted during model development. The independent test remains untouched in nested CV.
-
-## Historical independent-test provenance review (10 November 2026)
-
-**Important:** [The original notebook and archive chronology audit](verification/2026-11-10_historical_holdout_provenance_audit.md) found exploratory test-label evaluations and multiple alternative feature subsets in the historical ScavenPred development notebook. The records do **not** establish that the final independent test was never accessed or consulted during the original development process. This does not by itself prove that test results determined the final model; nevertheless, the old holdout cannot be certified as prospectively untouched. The [cell-level evidence inventory](verification/2026-11-10_original_notebook_cell_inventory.csv) records the specific notebook locations and hashes.
-
-The new nested cross-validation remains valid as a separate corrected assessment. Archived external-test results should be described as *legacy external evaluations* unless a contemporaneous, independently verified test-sealing history is available. Do not claim the historical test was never consulted on the basis of the current repository.
-
-## Primary corrected evaluation: sequence-group-disjoint nested CV (10 November 2026)
-
-The fully verified **primary leakage-controlled evaluation** is [strict_group_nested_validation.py](scripts/strict_group_nested_validation.py), with [complete metrics and fold results](verification/2026-11-10_final_group_disjoint_nested_cv.md). Unlike the superseded historical wrapper, the feature selector is inside the inner-CV `Pipeline`; model tuning and fitting are also restricted to the corresponding inner training folds. Related peptides (>=80% same-length identity, or full-sequence substring relations of length >=5) are placed in the same group across outer and inner splits.
-
-| Model | N | Out-of-fold accuracy | MCC | ROC-AUC | PR-AUC |
-|---|---:|---:|---:|---:|---:|
-| ScavenPred | 1,648 | 70.33% | 0.403 | 0.782 | 0.774 |
-| ACE-iPred | 1,933 | 75.06% | 0.498 | 0.819 | 0.820 |
-
-```bash
 python reproducibility/scripts/unpack_data.py
-python reproducibility/scripts/strict_group_nested_validation.py --data reproducibility/data/csv --out group_nested_results --model both
+
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+python reproducibility/scripts/grouped_nested_forward_wrapper_cv.py \
+  --data reproducibility/data/csv \
+  --out grouped_wrapper_results --model both \
+  --inner-trees 40 --candidate-limit 12
+
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+python reproducibility/scripts/forward_wrapper_screened_external.py \
+  --data reproducibility/data/csv \
+  --out grouped_wrapper_results --model both \
+  --inner-trees 40 --candidate-limit 12
 ```
 
-All 3,581 out-of-fold predictions were audited for unique membership and numerical consistency; all outer held-out sequence groups were disjoint from their corresponding training partitions. Independent-test files are not loaded. **Use these new nested evaluation results for the corrected methodology**, rather than claiming the old exploratory notebook was free from leakage. The public web service continues to use the previously deployed frozen model.
+All training and test descriptor CSVs are reconstructed and checksum-verified from the public archive. **scikit-learn 1.8.0** is pinned in `requirements.txt`. The public [GitHub Actions workflow](../../actions/workflows/grouped-forward-wrapper.yml) reruns and checks the metrics and provides full prediction files as downloadable run artifacts.
 
-## Final corrected external evaluation — 10 November 2026
+## Method and leakage controls
 
-The [full reproducible external-test script](scripts/reproduce_external_similarity_screened.py) selects model features/hyperparameters exclusively by cross-validation on the training data, then excludes closely related training analogues from the external test by sequence alone before applying the frozen selected estimator. The [independently checked results](verification/2026-11-10_final_external_similarity_screened.md) are:
+- Training data are grouped from peptide sequences without using activity labels: for length ≥5, equal-length sequences sharing ≥80% positional identity, or substring/superstring relations of length ≥5, are kept in one group. Relatedness is transitive.
+- Each of five outer groups of folds is held out from **all** descriptor screening and model selection. Only outer training data are supplied to the Welch (`p<0.05`), Pearson (`|r|<0.70`), VIF (`<10`), and forward-wrapper stages.
+- The forward wrapper adds positions/descriptors according to **inner grouped three-fold mean MCC**, with at most 12 candidate features, at most five selected ScavenPred features or ten ACE-iPred features. Inner wrapper scores are selection criteria; they are not unbiased generalization estimates.
+- The final model in each outer iteration is trained on that outer training fold, then predicts the untouched outer validation group. Reported cross-validation scores come only from concatenated outer out-of-fold predictions.
+- For the separate external assessment, the same forward-wrapper method selects features on the **full training dataset**, then fits the final RF; test activity labels never enter feature selection, tuning, or fitting. Exactly 6 ScavenPred and 5 ACE-iPred external peptides are excluded by sequence-based similarity screening.
+- The CV and external evaluations correspond to the same feature-selection **procedure**, although selected feature subsets vary between outer folds. The full-training final models are different from previously deployed web predictors.
 
-| Model | Screened external n | Accuracy | MCC | ROC-AUC | PR-AUC |
-|---|---:|---:|---:|---:|---:|
-| ScavenPred | 250 | 81.20% | 0.526 | 0.860 | 0.955 |
-| ACE-iPred | 248 | 75.00% | 0.461 | 0.843 | 0.929 |
+## Final fitted external models
 
-The missing ACE-iPred test descriptor Z5 is reconstructed from the **training sequences and training descriptor values only**, with maximum training residual < 4e-15. No external labels are used for model selection, training, or descriptor recovery.
+ScavenPred's full-training wrapper selected **ProtFP3, BLOSUM6, BLOSUM3, E5, ProtFP2**.
 
-```bash
-python reproducibility/scripts/unpack_data.py
-python reproducibility/scripts/reproduce_external_similarity_screened.py --data reproducibility/data/csv --scavenpred-test reproducibility/data/scavenpred_test_88.csv --out external_results
-```
+ACE-iPred's full-training wrapper selected **ProtFP3, BLOSUM1, BLOSUM6, BLOSUM4, BLOSUM5**.
+
+Both final models use the original fixed model-specific Random Forest settings, with forward selection using 40-tree inner evaluation and final fitting using 1,000 or 200 trees, respectively.
+
+## Datasets
+
+The 23 base64 parts under [`data/archive_parts`](data/archive_parts/) reconstruct the checksum-verified public dataset bundle (SHA-256 `5361826554c55de3f0f05b725f6c86eaa0d1c701a985728b28366fc12d6fb6bc`). Its CSV files include ScavenPred training `scavenpred_train_88.csv` (1,648 sequences), ACE-iPred training `ace_train_88.csv` (1,933 sequences), ACE training labels, test descriptor matrices and feature screening/provenance tables. All training and evaluation matrices contain 88 descriptor families before selection (the ACE external matrix originally had one missing descriptor, which is not selected in the forward-wrapper models).
+
+The `data/` directory retains archived supplementary records and a direct ScavenPred test-feature CSV. No proprietary SAPIEN-Pep or SIPPAD engine files are distributed.
+
+## Historical analyses retained for transparency
+
+The following are **not** the primary wrapper-based manuscript results:
+
+- [Previously published grouped `SelectKBest` CV](verification/2026-11-10_final_group_disjoint_nested_cv.md): ScavenPred 70.33%, ACE-iPred 75.06%.
+- [Previously published `SelectKBest` external evaluation](verification/2026-11-10_final_external_similarity_screened.md): ScavenPred 81.20%, ACE-iPred 75.00%.
+- [Original frozen-model independent tests](verification/2026-11-10_independent_test_rerun.json): ScavenPred 76.56% (256), ACE-iPred 72.73% (253). These belong to different frozen models and the historical [frozen-model CI](../../actions/workflows/reproducibility.yml).
+- [Exploratory notebook](notebooks/Scavenpred_original_archived.ipynb) and the [historical holdout provenance audit](verification/2026-11-10_historical_holdout_provenance_audit.md).
+
+Do **not** mix metrics, feature subsets or cohort sizes between evaluation protocols. In particular, the live [ScavenPred](https://pepsilico.com/tools/scavenpred/) and [ACE-iPred](https://pepsilico.com/tools/ace-ipred/) predictor endpoints have not been replaced with the new wrapper-selected models by this research analysis.
+
+## Scientific scope
+
+The negative cohorts include *putative* negatives; absence of a motif does not establish experimental inactivity. The models predict free-radical-scavenging or ACE-inhibitory peptide activities, not experimentally observed values. Cite the associated manuscript when final publication information is available.
