@@ -80,7 +80,7 @@ The following are **not** the primary wrapper-based manuscript results:
 - [Previously published grouped `SelectKBest` CV](verification/2026-11-10_final_group_disjoint_nested_cv.md): ScavenPred 70.33%, ACE-iPred 75.06%.
 - [Previously published `SelectKBest` external evaluation](verification/2026-11-10_final_external_similarity_screened.md): ScavenPred 81.20%, ACE-iPred 75.00%.
 - [Original frozen-model independent tests](verification/2026-11-10_independent_test_rerun.json): ScavenPred 76.56% (256), ACE-iPred 72.73% (253). These belong to different frozen models and the historical [frozen-model CI](../../actions/workflows/reproducibility.yml).
-- [Exploratory notebook](notebooks/Scavenpred_original_archived.ipynb) and the [historical holdout provenance audit](verification/2026-11-10_historical_holdout_provenance_audit.md).
+- [Exploratory notebook](notebooks/archive/Scavenpred_original_archived.ipynb) and the [historical holdout provenance audit](verification/2026-11-10_historical_holdout_provenance_audit.md).
 
 Do **not** mix metrics, feature subsets or cohort sizes between evaluation protocols. In particular, the live [ScavenPred](https://pepsilico.com/tools/scavenpred/) and [ACE-iPred](https://pepsilico.com/tools/ace-ipred/) predictor endpoints have not been replaced with the new wrapper-selected models by this research analysis.
 
