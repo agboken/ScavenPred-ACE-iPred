@@ -1,0 +1,41 @@
+name: Publish directly browsable ACE-iPred and ScavenPred descriptor CSVs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-visible-descriptor-data.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Restore verified descriptor archive
+        run: |
+          python reproducibility/scripts/unpack_data.py \
+            --root reproducibility --out /tmp/peptide-verified-csv
+      - name: Publish individual CSVs for direct browsing
+        run: |
+          cp /tmp/peptide-verified-csv/ace_train_88.csv reproducibility/data/ace_train_88.csv
+          cp /tmp/peptide-verified-csv/ace_train_labels.csv reproducibility/data/ace_train_labels.csv
+          cp /tmp/peptide-verified-csv/ace_test_88.csv reproducibility/data/ace_test_88.csv
+          cp /tmp/peptide-verified-csv/scavenpred_train_88.csv reproducibility/data/scavenpred_train_88.csv
+          cp /tmp/peptide-verified-csv/scavenpred_train_labels.csv reproducibility/data/scavenpred_train_labels.csv
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reproducibility/data/ace_train_88.csv reproducibility/data/ace_train_labels.csv reproducibility/data/ace_test_88.csv reproducibility/data/scavenpred_train_88.csv reproducibility/data/scavenpred_train_labels.csv
+          if ! git diff --cached --quiet; then
+            git commit -m "Expose ACE-iPred and ScavenPred verified descriptor CSVs directly"
+            git push
+          else
+            echo "All verified CSVs already available."
+          fi
